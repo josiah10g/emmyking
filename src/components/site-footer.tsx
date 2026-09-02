@@ -30,11 +30,6 @@ export function SiteFooter() {
                 Contact & support
               </Link>
             </li>
-            <li>
-              <Link to="/auth" className="hover:underline">
-                Admin login
-              </Link>
-            </li>
           </ul>
         </div>
         <div>
