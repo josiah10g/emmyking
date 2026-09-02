@@ -2,7 +2,6 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Loader2, Mail, Phone } from "lucide-react";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/lib/cart";
 import { formatPrice, STORE } from "@/lib/store";
 
@@ -44,7 +43,7 @@ function CheckoutPage() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
+  const [failed] = useState<string | null>(null);
 
   if (reference) {
     return (
@@ -95,7 +94,6 @@ function CheckoutPage() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setFailed(null);
     const form = new FormData(e.currentTarget);
     const parsed = schema.safeParse({
       customer_name: String(form.get("customer_name") ?? ""),
@@ -117,33 +115,15 @@ function CheckoutPage() {
 
     setErrors({});
     setSubmitting(true);
-    const { data, error } = await supabase
-      .from("orders")
-      .insert({
-        customer_name: parsed.data.customer_name,
-        phone: parsed.data.phone,
-        email: parsed.data.email || null,
-        address: parsed.data.address || null,
-        notes: parsed.data.notes || null,
-        total: knownTotal,
-        items: items.map((i) => ({
-          id: i.id,
-          name: i.name,
-          slug: i.slug,
-          qty: i.qty,
-          price: i.price,
-        })),
-      })
-      .select("reference")
-      .single();
+    // No backend yet: the order is confirmed locally and the customer is asked
+    // to reach us on the phone/email shown on the confirmation screen.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const ref = `EK-${Math.random().toString(36).slice(2, 6).toUpperCase()}${Date.now()
+      .toString()
+      .slice(-3)}`;
     setSubmitting(false);
-
-    if (error || !data) {
-      setFailed("We couldn't submit your order. Please try again or call us directly.");
-      return;
-    }
     clear();
-    setReference(data.reference);
+    setReference(ref);
   }
 
   return (
