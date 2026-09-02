@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, Phone, ShoppingBag, X } from "lucide-react";
+import { toast } from "sonner";
 import { useCart } from "@/lib/cart";
 import { STORE } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,14 @@ const links = [
   { to: "/products", label: "Shop" },
   { to: "/contact", label: "Contact" },
 ] as const;
+
+// Placeholder account actions. Accounts are not wired up yet — these buttons
+// exist so a real auth flow can be dropped in once a backend is added.
+function notifyAccountsComingSoon(action: "Login" | "Sign up") {
+  toast.info(`${action} is coming soon`, {
+    description: "Accounts aren't live yet. You can still order without one.",
+  });
+}
 
 export function SiteHeader() {
   const { count } = useCart();
@@ -51,19 +60,33 @@ export function SiteHeader() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           <a
             href={STORE.phoneHref}
-            className="hidden items-center gap-2 text-sm text-muted-foreground hover:text-foreground lg:flex"
+            className="hidden items-center gap-2 text-sm text-muted-foreground hover:text-foreground xl:flex"
           >
             <Phone className="h-4 w-4" />
             {STORE.phone}
           </a>
+          <button
+            type="button"
+            onClick={() => notifyAccountsComingSoon("Login")}
+            className="hidden rounded-sm px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={() => notifyAccountsComingSoon("Sign up")}
+            className="hidden rounded-sm border border-border px-3 py-2 text-sm font-semibold transition-colors hover:bg-accent sm:inline-flex"
+          >
+            Sign Up
+          </button>
           <Link
             to="/cart"
-            className="relative inline-flex items-center gap-2 rounded-sm border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+            className="relative inline-flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
           >
             <ShoppingBag className="h-4 w-4" />
             <span className="hidden sm:inline">Cart</span>
             {count > 0 && (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-foreground px-1 text-[11px] font-semibold text-primary">
                 {count}
               </span>
             )}
@@ -85,9 +108,28 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
-          <Link to="/auth" onClick={() => setOpen(false)} className="py-2.5 text-sm text-muted-foreground">
-            Admin login
-          </Link>
+          <div className="flex gap-2 py-3">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                notifyAccountsComingSoon("Login");
+              }}
+              className="flex-1 rounded-sm border border-border px-3 py-2 text-sm font-medium"
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                notifyAccountsComingSoon("Sign up");
+              }}
+              className="flex-1 rounded-sm bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+            >
+              Sign Up
+            </button>
+          </div>
         </nav>
       </div>
     </header>
