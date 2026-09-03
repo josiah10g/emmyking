@@ -170,6 +170,15 @@ function ProductDetail() {
             </button>
           </div>
 
+          <a
+            href={whatsappLink(`Hi EMMYKING STORES, I'd like to enquire about the ${data.name}.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-sm border border-border px-6 py-3 text-sm font-semibold transition-colors hover:bg-accent sm:w-auto"
+          >
+            <MessageCircle className="h-4 w-4" /> Enquire on WhatsApp
+          </a>
+
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <a href={STORE.phoneHref} className="inline-flex items-center gap-2 hover:text-foreground">
               <Phone className="h-4 w-4" /> {STORE.phone}
