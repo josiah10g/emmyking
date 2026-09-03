@@ -20,10 +20,12 @@ const PRODUCT_SLUGS = [
 
 export default defineConfig({
   tanstackStart: {
-    // Static SPA build: disables the Node crawler that fails on Netlify
-    // and produces a clean static client bundle.
     spa: { enabled: true },
-    prerender: { enabled: false },
+    prerender: {
+      enabled: false,
+      crawl: false,
+      routes: [],
+    },
   },
 });
 
