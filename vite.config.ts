@@ -6,7 +6,17 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-import { PRODUCTS } from "./src/lib/products";
+// Keep in sync with the slugs in src/lib/products.ts so each product page is
+// prerendered to static HTML (no server runtime needed on Netlify).
+const PRODUCT_SLUGS = [
+  "samsung-galaxy-s23-8-128",
+  "samsung-galaxy-s21",
+  "iphone-11-64gb",
+  "iphone-11-pro-256gb",
+  "iphone-16-pro-256gb",
+  "hp-elitebook-840-g6",
+  "google-pixel-9-pro-xl-16-128",
+];
 
 export default defineConfig({
   tanstackStart: {
