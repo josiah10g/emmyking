@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, Mail, Phone, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Check, Mail, MessageCircle, Phone, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { productQuery } from "@/lib/products";
 import { formatPrice, STORE } from "@/lib/store";
 import { useCart } from "@/lib/cart";
+import { whatsappLink } from "@/components/whatsapp-fab";
 
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => {
