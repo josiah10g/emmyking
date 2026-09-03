@@ -32,7 +32,7 @@ export default defineConfig({
       { path: "/cart" },
       { path: "/checkout" },
       { path: "/contact" },
-      ...PRODUCTS.map((p) => ({ path: `/products/${p.slug}` })),
+      ...PRODUCT_SLUGS.map((slug) => ({ path: `/products/${slug}` })),
     ],
     prerender: { enabled: true, autoStaticPathsDiscovery: false },
   },
