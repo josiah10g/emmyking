@@ -7,14 +7,14 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  // nitro: false disables the Nitro SSR plugin so the build outputs a plain
-  // client-only bundle to dist/client — no server functions, no prerender crawler.
+  // nitro: false skips the Nitro SSR plugin so dist/server/server.js is generated
+  // in the expected location — which the prerender crawler can then import successfully.
   nitro: false,
   tanstackStart: {
     prerender: {
-      enabled: false,
+      enabled: true,
       crawl: false,
-      routes: [],
+      routes: ["/"],
     },
   },
 });
