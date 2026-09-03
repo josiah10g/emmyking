@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, Mail, Phone, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Check, Mail, MessageCircle, Phone, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { productQuery } from "@/lib/products";
 import { formatPrice, STORE } from "@/lib/store";
 import { useCart } from "@/lib/cart";
+import { whatsappLink } from "@/components/whatsapp-fab";
 
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => {
@@ -169,6 +170,15 @@ function ProductDetail() {
               <ShoppingBag className="h-4 w-4" /> Add to cart
             </button>
           </div>
+
+          <a
+            href={whatsappLink(`Hi EMMYKING STORES, I'd like to enquire about the ${data.name}.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-sm border border-border px-6 py-3 text-sm font-semibold transition-colors hover:bg-accent sm:w-auto"
+          >
+            <MessageCircle className="h-4 w-4" /> Enquire on WhatsApp
+          </a>
 
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <a href={STORE.phoneHref} className="inline-flex items-center gap-2 hover:text-foreground">

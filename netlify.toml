@@ -2,7 +2,12 @@
   command = "npm run build"
   publish = "dist/client"
 
-# SPA fallback so client-side routes resolve on direct hits / refreshes.
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# SPA fallback so unknown/deep client-side routes still resolve.
+# Existing prerendered files take precedence over this rewrite.
 [[redirects]]
   from = "/*"
   to = "/index.html"
