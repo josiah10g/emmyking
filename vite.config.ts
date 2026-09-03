@@ -6,21 +6,11 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// Keep in sync with the slugs in src/lib/products.ts so each product page is
-// prerendered to static HTML (no server runtime needed on Netlify).
-const PRODUCT_SLUGS = [
-  "samsung-galaxy-s23-8-128",
-  "samsung-galaxy-s21",
-  "iphone-11-64gb",
-  "iphone-11-pro-256gb",
-  "iphone-16-pro-256gb",
-  "hp-elitebook-840-g6",
-  "google-pixel-9-pro-xl-16-128",
-];
-
 export default defineConfig({
+  // nitro: false disables the Nitro SSR plugin so the build outputs a plain
+  // client-only bundle to dist/client — no server functions, no prerender crawler.
+  nitro: false,
   tanstackStart: {
-    spa: { enabled: true },
     prerender: {
       enabled: false,
       crawl: false,
@@ -28,4 +18,3 @@ export default defineConfig({
     },
   },
 });
-
