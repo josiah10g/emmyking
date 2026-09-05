@@ -17,45 +17,66 @@ export type Database = {
       orders: {
         Row: {
           address: string | null
+          admin_note: string | null
           created_at: string
           customer_name: string
           email: string | null
           id: string
           items: Json
           notes: string | null
+          payment_status: string
           phone: string
+          receipt_path: string | null
+          receipt_uploaded_at: string | null
           reference: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           total: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
+          admin_note?: string | null
           created_at?: string
           customer_name: string
           email?: string | null
           id?: string
           items?: Json
           notes?: string | null
+          payment_status?: string
           phone: string
+          receipt_path?: string | null
+          receipt_uploaded_at?: string | null
           reference?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           total?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
+          admin_note?: string | null
           created_at?: string
           customer_name?: string
           email?: string | null
           id?: string
           items?: Json
           notes?: string | null
+          payment_status?: string
           phone?: string
+          receipt_path?: string | null
+          receipt_uploaded_at?: string | null
           reference?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           total?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -107,6 +128,45 @@ export type Database = {
         }
         Relationships: []
       }
+      store_settings: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          id: string
+          payment_instructions: string
+          updated_at: string
+          whatsapp_number: string
+        }
+        Insert: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          payment_instructions?: string
+          updated_at?: string
+          whatsapp_number?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          payment_instructions?: string
+          updated_at?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -133,6 +193,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
+      claim_first_admin: { Args: never; Returns: boolean }
+      grant_admin_by_email: { Args: { _email: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
