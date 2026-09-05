@@ -194,6 +194,10 @@ export type Database = {
     }
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
+      attach_receipt: {
+        Args: { _path: string; _phone: string; _reference: string }
+        Returns: boolean
+      }
       claim_first_admin: { Args: never; Returns: boolean }
       grant_admin_by_email: { Args: { _email: string }; Returns: boolean }
       has_role: {
@@ -202,6 +206,20 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      track_order: {
+        Args: { _phone: string; _reference: string }
+        Returns: {
+          admin_note: string
+          created_at: string
+          customer_name: string
+          items: Json
+          payment_status: string
+          receipt_uploaded_at: string
+          reference: string
+          status: string
+          total: number
+        }[]
       }
     }
     Enums: {
