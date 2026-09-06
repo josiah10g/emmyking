@@ -86,7 +86,7 @@ export async function uploadReceipt(
 
   const { error: uploadError } = await supabase.storage
     .from(RECEIPT_BUCKET)
-    .upload(path, file, { upsert: false, contentType: file.type || undefined });
+    .upload(path, file, file.type ? { upsert: false, contentType: file.type } : { upsert: false });
   if (uploadError) throw uploadError;
 
   const { data, error } = await supabase.rpc("attach_receipt", {
