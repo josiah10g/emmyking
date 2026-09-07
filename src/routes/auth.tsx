@@ -60,14 +60,37 @@ function AuthPage() {
     try {
       if (mode === "login") {
         await signInWithPassword(parsed.data.email, parsed.data.password);
-        toast.success("Welcome back");
+        toast.success("Welcome back! Loading dashboard...");
       } else {
         await signUpWithPassword(parsed.data.email, parsed.data.password);
-        toast.success("Account created", { description: "You can sign in now." });
-        setMode("login");
+        toast.success("Account created successfully!");
+        // Automatically attempt sign in right after signup so user doesn't have to re-enter
+        try {
+          await signInWithPassword(parsed.data.email, parsed.data.password);
+        } catch {
+          setMode("login");
+        }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+    } catch (err: unknown) {
+      console.error("[Auth Error]", err);
+      const raw = err instanceof Error ? err.message : String(err ?? "");
+      const lower = raw.toLowerCase();
+
+      if (lower.includes("invalid login credentials") || lower.includes("invalid_grant")) {
+        setError("Invalid email or password. Please verify the credentials or click 'Sign up' if you haven't created this account yet.");
+      } else if (lower.includes("email not confirmed") || lower.includes("unconfirmed")) {
+        setError("Email not confirmed yet in Supabase. In your Supabase dashboard (Authentication > Users), click '...' next to this user and select 'Auto-confirm user', or turn off 'Confirm email' under Auth Settings.");
+      } else if (lower.includes("weak") || lower.includes("easy to guess") || lower.includes("pwned")) {
+        setError("Password rejected: Supabase flagged this password as common. In Supabase (Authentication > Email), uncheck 'Prevent use of leaked passwords' to allow simple passwords, or choose another password.");
+      } else if (lower.includes("rate limit") || lower.includes("too many requests")) {
+        setError("Too many attempts. Supabase has placed a temporary security pause. Please wait a minute before trying again.");
+      } else if (lower.includes("user already registered") || lower.includes("already in use")) {
+        setError("An account with this email already exists. Please switch to 'Sign in' below.");
+      } else if (lower.includes("failed to fetch") || lower.includes("network")) {
+        setError("Network/Connection Error: Cannot connect to Supabase. Check your internet connection or verify your Supabase project status.");
+      } else {
+        setError(`Supabase Error: ${raw}`);
+      }
     } finally {
       setBusy(false);
     }
