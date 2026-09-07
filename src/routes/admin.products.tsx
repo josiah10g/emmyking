@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import {
   PRODUCT_IMAGE_BUCKET,
   productsQuery,
@@ -12,7 +13,7 @@ import {
 import { formatPrice } from "@/lib/store";
 
 export const Route = createFileRoute("/admin/products")({
-  component: AdminProducts;
+  component: AdminProducts,
 });
 
 type Draft = {
@@ -76,7 +77,7 @@ function AdminProducts() {
 
   const update = useMutation({
     mutationFn: async (v: { id: string; draft: Draft; file: File | null }) => {
-      const patch: Record<string, unknown> = {
+      const patch: Database["public"]["Tables"]["products"]["Update"] = {
         name: v.draft.name,
         brand: v.draft.brand || null,
         category: v.draft.category || "phones",
@@ -85,7 +86,7 @@ function AdminProducts() {
         price: v.draft.price.trim() === "" ? null : Number(v.draft.price),
         in_stock: v.draft.in_stock,
       };
-      if (v.file) patch['image_url'] = await uploadImage(v.file);
+      if (v.file) patch.image_url = await uploadImage(v.file);
       const { error } = await supabase.from("products").update(patch).eq("id", v.id);
       if (error) throw error;
     },
