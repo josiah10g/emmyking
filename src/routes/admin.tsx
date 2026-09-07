@@ -28,23 +28,25 @@ const tabs = [
 ] as const;
 
 function AdminLayout() {
-  const { session, loading, isAdmin } = useAuth();
+  const { loading, isAdmin, adminLogout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !session) navigate({ to: "/auth" });
-  }, [loading, session, navigate]);
+    if (!loading && !isAdmin) {
+      navigate({ to: "/auth" });
+    }
+  }, [loading, isAdmin, navigate]);
 
-  if (loading || (session && !isAdmin)) {
+  if (loading) {
     return (
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-24 text-sm text-muted-foreground sm:px-6">
         <Loader2 className="h-4 w-4 animate-spin" />
-        {loading ? "Checking your access…" : "Confirming your dashboard access…"}
+        Checking access…
       </div>
     );
   }
 
-  if (!session) return null;
+  if (!isAdmin) return null;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
@@ -57,7 +59,7 @@ function AdminLayout() {
         </div>
         <button
           type="button"
-          onClick={() => signOut()}
+          onClick={() => adminLogout()}
           className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
         >
           <LogOut className="h-4 w-4" /> Sign out
