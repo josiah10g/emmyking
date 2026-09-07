@@ -204,6 +204,12 @@ function AdminProducts() {
   );
 }
 
+function formatNumberWithCommas(val: string): string {
+  const digitsOnly = val.replace(/\D/g, "");
+  if (!digitsOnly) return "";
+  return Number(digitsOnly).toLocaleString("en-NG");
+}
+
 function ProductForm({
   title,
   product,
@@ -221,14 +227,33 @@ function ProductForm({
     category: product?.category ?? "phones",
     description: product?.description ?? "",
     specifications: product?.specifications ?? "",
-    price: product?.price === null || product?.price === undefined ? "" : String(product.price),
+    price: product?.price === null || product?.price === undefined ? "" : formatNumberWithCommas(String(product.price)),
     in_stock: product?.in_stock ?? true,
   });
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(product?.image_url ?? null);
 
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
   const input =
-    "mt-2 w-full rounded-sm border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring";
+    "mt-1.5 w-full rounded-sm border border-input bg-background px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring";
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0] ?? null;
+    setFile(selected);
+    if (selected) {
+      const objUrl = URL.createObjectURL(selected);
+      setPreviewUrl(objUrl);
+    }
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawDigits = e.target.value.replace(/\D/g, "");
+    if (!rawDigits) {
+      set({ price: "" });
+    } else {
+      set({ price: formatNumberWithCommas(rawDigits) });
+    }
+  };
 
   return (
     <form
@@ -238,21 +263,39 @@ function ProductForm({
           toast.error("Give the product a name");
           return;
         }
-        onSubmit(draft, file);
+        // Send pure numeric value to the database
+        const numericPrice = draft.price.replace(/,/g, "");
+        onSubmit({ ...draft, price: numericPrice }, file);
       }}
-      className="grid gap-4 rounded-sm border border-border p-5 sm:grid-cols-2"
+      className="grid gap-5 rounded-md border border-border bg-card p-6 shadow-sm sm:grid-cols-2"
     >
-      <p className="font-display text-lg font-semibold tracking-tight sm:col-span-2">{title}</p>
+      <div className="sm:col-span-2 border-b border-border pb-3">
+        <h3 className="font-display text-xl font-semibold tracking-tight">{title}</h3>
+        <p className="text-xs text-muted-foreground">Fill in details and preview the product photo before saving.</p>
+      </div>
 
-      <label className="text-sm font-medium">
-        Name
-        <input value={draft.name} onChange={(e) => set({ name: e.target.value })} className={input} />
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Product Name
+        <input
+          required
+          placeholder="e.g. iPhone 15 Pro Max 256GB"
+          value={draft.name}
+          onChange={(e) => set({ name: e.target.value })}
+          className={input}
+        />
       </label>
-      <label className="text-sm font-medium">
+
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Brand
-        <input value={draft.brand} onChange={(e) => set({ brand: e.target.value })} className={input} />
+        <input
+          placeholder="e.g. Apple, Samsung, HP"
+          value={draft.brand}
+          onChange={(e) => set({ brand: e.target.value })}
+          className={input}
+        />
       </label>
-      <label className="text-sm font-medium">
+
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Category
         <select
           value={draft.category}
@@ -261,61 +304,111 @@ function ProductForm({
         >
           <option value="phones">Phones</option>
           <option value="laptops">Laptops</option>
-          <option value="gadgets">Gadgets</option>
+          <option value="gadgets">Gadgets & Accessories</option>
         </select>
       </label>
-      <label className="text-sm font-medium">
-        Price in Naira (leave empty for &ldquo;price on request&rdquo;)
-        <input
-          value={draft.price}
-          onChange={(e) => set({ price: e.target.value.replace(/[^0-9.]/g, "") })}
-          inputMode="decimal"
-          className={input}
-        />
-      </label>
-      <label className="text-sm font-medium sm:col-span-2">
+
+      {/* Price with Naira symbol and automatic comma separation */}
+      <div>
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Price in Naira (leave empty for &ldquo;Price on Request&rdquo;)
+        </label>
+        <div className="relative mt-1.5 flex items-center">
+          <span className="pointer-events-none absolute left-3 font-semibold text-foreground">
+            ₦
+          </span>
+          <input
+            value={draft.price}
+            onChange={handlePriceChange}
+            placeholder="e.g. 850,000"
+            inputMode="numeric"
+            className="w-full rounded-sm border border-input bg-background py-2.5 pr-3 pl-8 text-sm font-semibold outline-none transition focus:ring-2 focus:ring-ring"
+          />
+        </div>
+      </div>
+
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:col-span-2">
         Description
         <textarea
           rows={3}
+          placeholder="Brief overview of device condition, color, and warranty..."
           value={draft.description}
           onChange={(e) => set({ description: e.target.value })}
           className={input}
         />
       </label>
-      <label className="text-sm font-medium sm:col-span-2">
-        Specifications
+
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:col-span-2">
+        Specifications (Display, RAM, Storage, Battery)
         <textarea
           rows={3}
+          placeholder="e.g. Display: 6.7 inch OLED | Storage: 256GB | Battery: 100%"
           value={draft.specifications}
           onChange={(e) => set({ specifications: e.target.value })}
           className={input}
         />
       </label>
-      <label className="text-sm font-medium">
-        Product photo
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="mt-2 w-full text-sm"
-        />
-      </label>
-      <label className="flex items-center gap-2 self-end text-sm font-medium">
+
+      {/* Product photo upload with live confirmation preview */}
+      <div className="sm:col-span-2 rounded-md border border-dashed border-border p-4 bg-muted/30">
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+          Product Photo & Preview
+        </label>
+        <div className="mt-3 flex flex-wrap items-center gap-5">
+          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-md border border-border bg-background shadow-xs flex items-center justify-center">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="Product preview"
+                className="h-full w-full object-contain p-2"
+              />
+            ) : (
+              <span className="text-center text-xs text-muted-foreground px-2">No photo selected</span>
+            )}
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="text-xs file:mr-3 file:rounded-sm file:border-0 file:bg-primary file:px-3.5 file:py-2 file:text-xs file:font-semibold file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {file ? (
+                <span className="font-medium text-primary">Selected: {file.name}</span>
+              ) : (
+                "Upload a high-quality photo of the device (JPG, PNG or WebP)."
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm font-medium cursor-pointer sm:col-span-2">
         <input
           type="checkbox"
           checked={draft.in_stock}
           onChange={(e) => set({ in_stock: e.target.checked })}
+          className="h-4 w-4 rounded border-input"
         />
-        In stock
+        <span>In stock and ready to deliver</span>
       </label>
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60 sm:col-span-2"
-      >
-        {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save product
-      </button>
+      {/* Prominent, easy-to-see save button */}
+      <div className="sm:col-span-2 pt-2">
+        <button
+          type="submit"
+          disabled={busy}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-6 py-3.5 text-sm font-bold tracking-wide text-primary-foreground shadow-md transition-all duration-200 hover:opacity-95 hover:shadow-lg disabled:opacity-60"
+        >
+          {busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          {product ? "Update & Save Product" : "Confirm & Add Product to Store"}
+        </button>
+      </div>
     </form>
   );
 }
