@@ -9,6 +9,7 @@ const ADMIN_STORAGE_KEY = "emmy_admin_authenticated";
 type AuthValue = {
   session: Session | null;
   loading: boolean;
+  roleLoading: boolean;
   isAdmin: boolean;
   email: string | null;
   refreshRole: () => Promise<void>;
@@ -17,27 +18,44 @@ type AuthValue = {
 const AuthContext = createContext<AuthValue | null>(null);
 
 async function checkIsAdmin(userId: string): Promise<boolean> {
+  // First check if user has admin role
   const { data } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  return Boolean(data);
+  if (data) return true;
+
+  // If no user roles exist yet in the database, claim this user as the first admin automatically
+  try {
+    const { data: claimed } = await supabase.rpc("claim_first_admin");
+    if (claimed) return true;
+  } catch {
+    // If rpc doesn't exist, proceed
+  }
+  return false;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   const verifyRole = async (s: Session | null) => {
     if (!s?.user?.id) {
       setIsAdmin(false);
+      setRoleLoading(false);
       return;
     }
-    const admin = await checkIsAdmin(s.user.id);
-    setIsAdmin(admin);
+    setRoleLoading(true);
+    try {
+      const admin = await checkIsAdmin(s.user.id);
+      setIsAdmin(admin);
+    } finally {
+      setRoleLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -67,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       session,
       loading,
+      roleLoading,
       isAdmin,
       email: session?.user?.email ?? null,
       refreshRole: async () => {
@@ -76,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
     }),
-    [session, loading, isAdmin],
+    [session, loading, roleLoading, isAdmin],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

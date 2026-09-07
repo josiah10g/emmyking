@@ -28,25 +28,31 @@ const tabs = [
 ] as const;
 
 function AdminLayout() {
-  const { loading, isAdmin, adminLogout } = useAuth();
+  const { session, loading, roleLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
-      navigate({ to: "/auth" });
+    // Only redirect if done checking session AND done checking role in database
+    if (!loading && !roleLoading) {
+      if (!session || !isAdmin) {
+        navigate({ to: "/auth" });
+      }
     }
-  }, [loading, isAdmin, navigate]);
+  }, [loading, roleLoading, session, isAdmin, navigate]);
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-24 text-sm text-muted-foreground sm:px-6">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Checking access…
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+        <h2 className="mt-5 font-display text-xl font-semibold tracking-tight">Verifying Administrator Access…</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Checking permissions, please hold on.</p>
       </div>
     );
   }
 
-  if (!isAdmin) return null;
+  if (!session || !isAdmin) return null;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
