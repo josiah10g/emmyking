@@ -32,8 +32,8 @@ function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only redirect once session and role loading are completely finished
-    if (!loading && !roleLoading && (session || isAdmin)) {
+    // Only automatically jump to /admin if the user is verified as an admin
+    if (!loading && !roleLoading && session && isAdmin) {
       navigate({ to: "/admin" });
     }
   }, [session, loading, roleLoading, isAdmin, navigate]);
