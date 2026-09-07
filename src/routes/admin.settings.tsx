@@ -50,15 +50,16 @@ function AdminSettings() {
 
   const grantAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!staffEmail.trim()) return;
+    const emailToGrant = staffEmail.trim().toLowerCase();
+    if (!emailToGrant) return;
     setAddingStaff(true);
     try {
-      const ok = await grantAdminByEmail(staffEmail.trim().toLowerCase());
+      const ok = await grantAdminByEmail(emailToGrant);
       if (ok) {
-        toast.success(`Admin access granted to ${staffEmail.trim()}`);
+        toast.success(`Success: Admin permissions granted to ${emailToGrant}`);
         setStaffEmail("");
       } else {
-        toast.error("User not found. Ask them to create an account first.");
+        toast.error(`User "${emailToGrant}" does not exist yet. They must sign up or create an account on the store first before you can grant them admin permissions.`);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to grant admin access";

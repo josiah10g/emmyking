@@ -134,7 +134,16 @@ export async function signOut() {
   await supabase.auth.signOut().catch(() => {});
 }
 
-export async function grantAdminByEmail(_email: string): Promise<boolean> {
-  return true;
+export async function grantAdminByEmail(email: string): Promise<boolean> {
+  const normalized = email.trim().toLowerCase();
+  
+  // Call the Supabase function grant_admin_by_email which looks up auth.users by email
+  const { data, error } = await supabase.rpc("grant_admin_by_email", {
+    _email: normalized,
+  });
+
+  if (error) throw error;
+  return data === true;
 }
+
 
