@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, Phone, ShoppingBag, X } from "lucide-react";
-import { toast } from "sonner";
+import { LogOut, Menu, Phone, ShoppingBag, X } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { STORE } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { useAuth, signOut } from "@/lib/auth";
 
 const links = [
   { to: "/", label: "Home" },
@@ -12,17 +12,11 @@ const links = [
   { to: "/contact", label: "Contact" },
 ] as const;
 
-// Placeholder account actions. Accounts are not wired up yet — these buttons
-// exist so a real auth flow can be dropped in once a backend is added.
-function notifyAccountsComingSoon(action: "Login" | "Sign up") {
-  toast.info(`${action} is coming soon`, {
-    description: "Accounts aren't live yet. You can still order without one.",
-  });
-}
-
 export function SiteHeader() {
   const { count } = useCart();
+  const { session, displayName, isAdmin, loading } = useAuth();
   const [open, setOpen] = useState(false);
+  const isLoggedIn = !!session;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
@@ -66,7 +60,14 @@ export function SiteHeader() {
             {STORE.phone}
           </a>
 
-          {/* Direct Admin Access Button with sleek hover effects */}
+          {/* Greeting when logged in */}
+          {!loading && isLoggedIn && displayName && (
+            <span className="hidden items-center text-xs font-medium text-muted-foreground sm:flex">
+              Hi,&nbsp;<span className="font-semibold text-foreground">{displayName.split(" ")[0]}</span>
+            </span>
+          )}
+
+          {/* Admin Dashboard button — always visible */}
           <Link
             to="/admin"
             className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary transition-all duration-300 hover:border-primary/50 hover:bg-primary hover:text-primary-foreground hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
@@ -75,15 +76,29 @@ export function SiteHeader() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75 group-hover:bg-primary-foreground"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary group-hover:bg-primary-foreground"></span>
             </span>
-            <span>Admin</span>
+            <span>{isLoggedIn && isAdmin ? "Dashboard" : "Admin"}</span>
           </Link>
 
-          <Link
-            to="/auth"
-            className="hidden rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40 sm:inline-flex"
-          >
-            Sign In
-          </Link>
+          {/* Auth button: Sign Out when logged in, Sign In when logged out */}
+          {!loading && (
+            isLoggedIn ? (
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="hidden items-center gap-1.5 rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40 sm:inline-flex"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                className="hidden rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40 sm:inline-flex"
+              >
+                Sign In
+              </Link>
+            )
+          )}
 
           <Link
             to="/cart"
@@ -100,8 +115,15 @@ export function SiteHeader() {
         </div>
       </div>
 
+      {/* Mobile slide-out menu */}
       <div className={cn("border-t border-border md:hidden", open ? "block" : "hidden")}>
         <nav className="mx-auto flex max-w-7xl flex-col px-4 py-2 sm:px-6">
+          {/* Name greeting on mobile */}
+          {!loading && isLoggedIn && displayName && (
+            <p className="py-2 text-sm font-semibold text-foreground">
+              Hi, {displayName} 👋
+            </p>
+          )}
           {links.map((l) => (
             <Link
               key={l.to}
@@ -120,15 +142,28 @@ export function SiteHeader() {
               onClick={() => setOpen(false)}
               className="flex-1 rounded-sm border border-primary/40 bg-primary/10 px-3 py-2 text-center text-sm font-semibold text-primary"
             >
-              Admin Dashboard
+              {isLoggedIn && isAdmin ? "Dashboard" : "Admin Dashboard"}
             </Link>
-            <Link
-              to="/auth"
-              onClick={() => setOpen(false)}
-              className="flex-1 rounded-sm bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground"
-            >
-              Sign In
-            </Link>
+            {!loading && (
+              isLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={() => { signOut(); setOpen(false); }}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-sm bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Sign Out
+                </button>
+              ) : (
+                <Link
+                  to="/auth"
+                  onClick={() => setOpen(false)}
+                  className="flex-1 rounded-sm bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground"
+                >
+                  Sign In
+                </Link>
+              )
+            )}
           </div>
         </nav>
       </div>

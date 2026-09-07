@@ -12,6 +12,8 @@ type AuthValue = {
   roleLoading: boolean;
   isAdmin: boolean;
   email: string | null;
+  /** User's full name from signup metadata, or email prefix as fallback */
+  displayName: string | null;
   refreshRole: () => Promise<void>;
 };
 
@@ -81,22 +83,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const value = useMemo<AuthValue>(
-    () => ({
+  const value = useMemo<AuthValue>(() => {
+    const meta = session?.user?.user_metadata ?? {};
+    const rawName: string =
+      (meta["full_name"] as string | undefined) ??
+      (meta["name"] as string | undefined) ??
+      "";
+    const displayName: string | null = rawName.trim()
+      ? rawName.trim()
+      : session?.user?.email
+        ? session.user.email.split("@")[0]
+        : null;
+
+    return {
       session,
       loading,
       roleLoading,
       isAdmin,
       email: session?.user?.email ?? null,
+      displayName,
       refreshRole: async () => {
         if (session?.user?.id) {
           const admin = await checkIsAdmin(session.user.id);
           setIsAdmin(admin);
         }
       },
-    }),
-    [session, loading, roleLoading, isAdmin],
-  );
+    };
+  }, [session, loading, roleLoading, isAdmin]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -113,10 +126,15 @@ export async function signInWithPassword(email: string, password: string) {
   return data;
 }
 
-export async function signUpWithPassword(email: string, password: string) {
+export async function signUpWithPassword(email: string, password: string, fullName?: string) {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
+    options: {
+      data: {
+        full_name: fullName?.trim() || "",
+      },
+    },
   });
   if (error) throw error;
   return data;

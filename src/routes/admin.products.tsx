@@ -76,7 +76,7 @@ function AdminProducts() {
   });
 
   const update = useMutation({
-    mutationFn: async (v: { id: string; draft: Draft; file: File | null }) => {
+    mutationFn: async (v: { id: string; draft: Draft; file: File | null; removeImage?: boolean }) => {
       const patch: Database["public"]["Tables"]["products"]["Update"] = {
         name: v.draft.name,
         brand: v.draft.brand || null,
@@ -86,7 +86,11 @@ function AdminProducts() {
         price: v.draft.price.trim() === "" ? null : Number(v.draft.price),
         in_stock: v.draft.in_stock,
       };
-      if (v.file) patch.image_url = await uploadImage(v.file);
+      if (v.removeImage) {
+        patch.image_url = null;
+      } else if (v.file) {
+        patch.image_url = await uploadImage(v.file);
+      }
       const { error } = await supabase.from("products").update(patch).eq("id", v.id);
       if (error) throw error;
     },
@@ -192,7 +196,7 @@ function AdminProducts() {
                     title="Edit product"
                     product={p}
                     busy={update.isPending}
-                    onSubmit={(draft, file) => update.mutate({ id: p.id, draft, file })}
+                    onSubmit={(draft, file, removeImage) => update.mutate({ id: p.id, draft, file, removeImage })}
                   />
                 </div>
               </details>
@@ -219,7 +223,7 @@ function ProductForm({
   title: string;
   product?: Product;
   busy: boolean;
-  onSubmit: (draft: Draft, file: File | null) => void;
+  onSubmit: (draft: Draft, file: File | null, removeImage?: boolean) => void;
 }) {
   const [draft, setDraft] = useState<Draft>({
     name: product?.name ?? "",
@@ -232,6 +236,7 @@ function ProductForm({
   });
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(product?.image_url ?? null);
+  const [removeImage, setRemoveImage] = useState(false);
 
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
   const input =
@@ -243,7 +248,14 @@ function ProductForm({
     if (selected) {
       const objUrl = URL.createObjectURL(selected);
       setPreviewUrl(objUrl);
+      setRemoveImage(false);
     }
+  };
+
+  const handleRemovePhoto = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    setRemoveImage(true);
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,7 +277,7 @@ function ProductForm({
         }
         // Send pure numeric value to the database
         const numericPrice = draft.price.replace(/,/g, "");
-        onSubmit({ ...draft, price: numericPrice }, file);
+        onSubmit({ ...draft, price: numericPrice }, file, removeImage);
       }}
       className="grid gap-5 rounded-md border border-border bg-card p-6 shadow-sm sm:grid-cols-2"
     >
@@ -351,9 +363,20 @@ function ProductForm({
 
       {/* Product photo upload with live confirmation preview */}
       <div className="sm:col-span-2 rounded-md border border-dashed border-border p-4 bg-muted/30">
-        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
-          Product Photo & Preview
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+            Product Photo & Preview
+          </label>
+          {previewUrl && (
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              className="text-xs text-destructive hover:underline font-semibold"
+            >
+              Remove photo (leave blank)
+            </button>
+          )}
+        </div>
         <div className="mt-3 flex flex-wrap items-center gap-5">
           <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-md border border-border bg-background shadow-xs flex items-center justify-center">
             {previewUrl ? (
@@ -363,7 +386,7 @@ function ProductForm({
                 className="h-full w-full object-contain p-2"
               />
             ) : (
-              <span className="text-center text-xs text-muted-foreground px-2">No photo selected</span>
+              <span className="text-center text-xs text-muted-foreground px-2">No photo</span>
             )}
           </div>
           <div className="flex-1 min-w-[200px]">
@@ -376,6 +399,8 @@ function ProductForm({
             <p className="mt-2 text-xs text-muted-foreground">
               {file ? (
                 <span className="font-medium text-primary">Selected: {file.name}</span>
+              ) : previewUrl ? (
+                "Photo uploaded. Click 'Remove photo' above if you want to leave it blank."
               ) : (
                 "Upload a high-quality photo of the device (JPG, PNG or WebP)."
               )}

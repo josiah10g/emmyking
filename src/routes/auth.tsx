@@ -24,6 +24,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,6 +54,10 @@ function AuthPage() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (mode === "signup" && !firstName.trim()) {
+      setError("Please enter your first name.");
+      return;
+    }
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
@@ -70,7 +76,8 @@ function AuthPage() {
         toast.success("Welcome back! Loading dashboard...");
         navigate({ to: "/admin" });
       } else {
-        const res = await signUpWithPassword(email, password);
+        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+        const res = await signUpWithPassword(email, password, fullName);
         toast.success("Account created successfully!");
         
         if (res?.session) {
@@ -156,6 +163,42 @@ function AuthPage() {
       </div>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        {mode === "signup" && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                First Name
+              </label>
+              <div className="relative mt-1.5">
+                <input
+                  id="firstName"
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="e.g. John"
+                  className="w-full rounded-sm border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Surname
+              </label>
+              <div className="relative mt-1.5">
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="e.g. Doe"
+                  className="w-full rounded-sm border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
           <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Email address
