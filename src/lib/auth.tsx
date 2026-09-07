@@ -11,8 +11,6 @@ type AuthValue = {
   loading: boolean;
   isAdmin: boolean;
   email: string | null;
-  adminLogin: (passcode: string) => boolean;
-  adminLogout: () => void;
   refreshRole: () => Promise<void>;
 };
 
@@ -24,53 +22,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if store owner is logged in via Master Admin Passcode
-    const localAdmin = localStorage.getItem(ADMIN_STORAGE_KEY);
-    if (localAdmin === "true") {
-      setIsAdmin(true);
-    }
+    let active = true;
 
-    // Optional Supabase background listener
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+      if (!active) return;
       setSession(next);
-      if (localStorage.getItem(ADMIN_STORAGE_KEY) === "true") {
-        setIsAdmin(true);
-      }
+      setIsAdmin(Boolean(next?.user));
     });
 
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
+      if (!active) return;
+      const s = data.session ?? null;
+      setSession(s);
+      setIsAdmin(Boolean(s?.user));
       setLoading(false);
     });
 
     return () => {
+      active = false;
       sub.subscription.unsubscribe();
     };
   }, []);
-
-  const adminLogin = (passcode: string): boolean => {
-    if (passcode.trim() === MASTER_ADMIN_PASSCODE) {
-      localStorage.setItem(ADMIN_STORAGE_KEY, "true");
-      setIsAdmin(true);
-      return true;
-    }
-    return false;
-  };
-
-  const adminLogout = () => {
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
-    setIsAdmin(false);
-    supabase.auth.signOut().catch(() => {});
-  };
 
   const value = useMemo<AuthValue>(
     () => ({
       session,
       loading,
       isAdmin,
-      email: isAdmin ? "store-owner@emmyking.com" : session?.user.email ?? null,
-      adminLogin,
-      adminLogout,
+      email: session?.user?.email ?? null,
       refreshRole: async () => {},
     }),
     [session, loading, isAdmin],
@@ -85,8 +64,30 @@ export function useAuth() {
   return ctx;
 }
 
+export async function signInWithPassword(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw error;
+  return data;
+}
+
+export async function signUpWithPassword(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin },
+  });
+  if (error) throw error;
+}
+
 export async function signOut() {
-  localStorage.removeItem(ADMIN_STORAGE_KEY);
   await supabase.auth.signOut().catch(() => {});
 }
 
