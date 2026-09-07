@@ -16,25 +16,44 @@ type AuthValue = {
 
 const AuthContext = createContext<AuthValue | null>(null);
 
+async function checkIsAdmin(userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  return Boolean(data);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const verifyRole = async (s: Session | null) => {
+    if (!s?.user?.id) {
+      setIsAdmin(false);
+      return;
+    }
+    const admin = await checkIsAdmin(s.user.id);
+    setIsAdmin(admin);
+  };
+
   useEffect(() => {
     let active = true;
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, next) => {
       if (!active) return;
       setSession(next);
-      setIsAdmin(Boolean(next?.user));
+      await verifyRole(next);
     });
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       const s = data.session ?? null;
       setSession(s);
-      setIsAdmin(Boolean(s?.user));
+      await verifyRole(s);
       setLoading(false);
     });
 
@@ -50,7 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       isAdmin,
       email: session?.user?.email ?? null,
-      refreshRole: async () => {},
+      refreshRole: async () => {
+        if (session?.user?.id) {
+          const admin = await checkIsAdmin(session.user.id);
+          setIsAdmin(admin);
+        }
+      },
     }),
     [session, loading, isAdmin],
   );

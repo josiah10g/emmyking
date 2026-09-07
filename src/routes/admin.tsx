@@ -59,7 +59,7 @@ function AdminLayout() {
         </div>
         <button
           type="button"
-          onClick={() => adminLogout()}
+          onClick={() => signOut()}
           className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
         >
           <LogOut className="h-4 w-4" /> Sign out
