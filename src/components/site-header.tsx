@@ -57,7 +57,7 @@ export function SiteHeader() {
           </nav>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <a
             href={STORE.phoneHref}
             className="hidden items-center gap-2 text-sm text-muted-foreground hover:text-foreground xl:flex"
@@ -65,23 +65,29 @@ export function SiteHeader() {
             <Phone className="h-4 w-4" />
             {STORE.phone}
           </a>
-          <button
-            type="button"
-            onClick={() => notifyAccountsComingSoon("Login")}
-            className="hidden rounded-sm px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+
+          {/* Direct Admin Access Button with sleek hover effects */}
+          <Link
+            to="/admin"
+            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary transition-all duration-300 hover:border-primary/50 hover:bg-primary hover:text-primary-foreground hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
           >
-            Login
-          </button>
-          <button
-            type="button"
-            onClick={() => notifyAccountsComingSoon("Sign up")}
-            className="hidden rounded-sm border border-border px-3 py-2 text-sm font-semibold transition-colors hover:bg-accent sm:inline-flex"
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75 group-hover:bg-primary-foreground"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary group-hover:bg-primary-foreground"></span>
+            </span>
+            <span>Admin</span>
+          </Link>
+
+          <Link
+            to="/auth"
+            className="hidden rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40 sm:inline-flex"
           >
-            Sign Up
-          </button>
+            Sign In
+          </Link>
+
           <Link
             to="/cart"
-            className="relative inline-flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            className="relative inline-flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-all duration-300 hover:opacity-90 hover:shadow-sm"
           >
             <ShoppingBag className="h-4 w-4" />
             <span className="hidden sm:inline">Cart</span>
@@ -109,26 +115,20 @@ export function SiteHeader() {
             </Link>
           ))}
           <div className="flex gap-2 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                notifyAccountsComingSoon("Login");
-              }}
-              className="flex-1 rounded-sm border border-border px-3 py-2 text-sm font-medium"
+            <Link
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className="flex-1 rounded-sm border border-primary/40 bg-primary/10 px-3 py-2 text-center text-sm font-semibold text-primary"
             >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                notifyAccountsComingSoon("Sign up");
-              }}
-              className="flex-1 rounded-sm bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+              Admin Dashboard
+            </Link>
+            <Link
+              to="/auth"
+              onClick={() => setOpen(false)}
+              className="flex-1 rounded-sm bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground"
             >
-              Sign Up
-            </button>
+              Sign In
+            </Link>
           </div>
         </nav>
       </div>

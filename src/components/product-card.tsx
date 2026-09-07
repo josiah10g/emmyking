@@ -8,15 +8,15 @@ export function ProductCard({ product }: { product: Product }) {
     <Link
       to="/products/$slug"
       params={{ slug: product.slug }}
-      className="group flex flex-col overflow-hidden rounded-sm border border-border bg-card transition-shadow hover:shadow-[0_18px_40px_-24px_oklch(0_0_0/0.45)]"
+      className="group flex flex-col overflow-hidden rounded-md border border-border/80 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_20px_35px_-15px_rgba(0,0,0,0.1)]"
     >
-      <div className="aspect-square overflow-hidden bg-secondary">
+      <div className="relative aspect-square overflow-hidden bg-secondary/50">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-contain p-6 transition-transform duration-500 ease-out group-hover:scale-108"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
