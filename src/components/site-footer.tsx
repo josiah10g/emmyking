@@ -9,7 +9,7 @@ export function SiteFooter() {
         <div>
           <h2 className="font-display text-2xl font-semibold tracking-tight">EMMYKING STORES</h2>
           <p className="mt-3 max-w-sm text-sm text-primary-foreground/70">
-            {STORE.tagline}. Genuine devices, honest advice and fast delivery nationwide.
+            {STORE.tagline}. Genuine devices, honest advice and reliable delivery.
           </p>
         </div>
         <div>

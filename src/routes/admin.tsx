@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { Loader2, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import { signOut, useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/admin")({
@@ -30,6 +31,39 @@ const tabs = [
 function AdminLayout() {
   const { session, loading, roleLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [showSplash, setShowSplash] = useState(true);
+
+  // 1. Brief cool loading splash screen when entering admin dashboard
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 2. Inactivity timer: Automatically sign out after 5 minutes (300,000 ms) of inactivity
+  useEffect(() => {
+    if (!session || !isAdmin) return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        toast.info("Session expired due to 5 minutes of inactivity. Please sign in again.");
+        signOut();
+      }, 5 * 60 * 1000); // 5 minutes
+    };
+
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
+    events.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach((ev) => window.removeEventListener(ev, resetTimer));
+    };
+  }, [session, isAdmin]);
 
   useEffect(() => {
     // Only redirect to /auth if the user has no active session at all
@@ -38,14 +72,14 @@ function AdminLayout() {
     }
   }, [loading, session, navigate]);
 
-  if (loading || roleLoading) {
+  if (loading || roleLoading || showSplash) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center animate-in fade-in duration-300">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-        <h2 className="mt-5 font-display text-xl font-semibold tracking-tight">Verifying Administrator Access…</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Checking permissions, please hold on.</p>
+        <h2 className="mt-5 font-display text-2xl font-bold tracking-tight">Verifying Administrator Access…</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Preparing your executive dashboard, please hold on.</p>
       </div>
     );
   }
@@ -104,13 +138,6 @@ function AdminLayout() {
             Manage your store inventory, review customer bank receipts, and configure store settings.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => signOut()}
-          className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium transition hover:bg-accent"
-        >
-          <LogOut className="h-4 w-4" /> Sign out
-        </button>
       </div>
 
       <nav className="mt-6 flex flex-wrap gap-2 border-b border-border pb-3">

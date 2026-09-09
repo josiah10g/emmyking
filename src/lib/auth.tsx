@@ -19,23 +19,45 @@ type AuthValue = {
 
 const AuthContext = createContext<AuthValue | null>(null);
 
+const ADMIN_CACHE_KEY = "emmy_is_admin_cached";
+
 async function checkIsAdmin(userId: string): Promise<boolean> {
-  // First check if user has admin role
-  const { data } = await supabase
+  // Check fast session cache first so page transitions are instantaneous
+  try {
+    const cached = sessionStorage.getItem(`${ADMIN_CACHE_KEY}_${userId}`);
+    if (cached === "true") return true;
+  } catch {}
+
+  // Check if user has admin role in database
+  const { data, error } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  if (data) return true;
 
-  // If no user roles exist yet in the database, claim this user as the first admin automatically
-  try {
-    const { data: claimed } = await supabase.rpc("claim_first_admin");
-    if (claimed) return true;
-  } catch {
-    // If rpc doesn't exist, proceed
+  if (data) {
+    try {
+      sessionStorage.setItem(`${ADMIN_CACHE_KEY}_${userId}`, "true");
+    } catch {}
+    return true;
   }
+
+  // If no role found and no error, try claim_first_admin only once if not already checked
+  if (!error) {
+    try {
+      const { data: claimed } = await supabase.rpc("claim_first_admin");
+      if (claimed) {
+        try {
+          sessionStorage.setItem(`${ADMIN_CACHE_KEY}_${userId}`, "true");
+        } catch {}
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return false;
 }
 

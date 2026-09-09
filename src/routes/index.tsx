@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BadgeCheck, Headphones, Truck } from "lucide-react";
+import { ArrowRight, BadgeCheck, Headphones } from "lucide-react";
 import { ProductCard, ProductCardSkeleton } from "@/components/product-card";
 import { productsQuery } from "@/lib/products";
 import { STORE } from "@/lib/store";
@@ -78,10 +78,9 @@ function Home() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:grid-cols-3 sm:px-6">
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:grid-cols-2 sm:px-6">
         {[
           { icon: BadgeCheck, title: "Verified originals", body: "Every phone and laptop checked before dispatch." },
-          { icon: Truck, title: "Nationwide delivery", body: "Fast, tracked delivery across Nigeria." },
           { icon: Headphones, title: "Real human support", body: "Call or email and speak to us directly." },
         ].map(({ icon: Icon, title, body }) => (
           <div key={title} className="rounded-sm border border-border p-5">

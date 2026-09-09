@@ -60,8 +60,8 @@ export function SiteHeader() {
             {STORE.phone}
           </a>
 
-          {/* Greeting when logged in */}
-          {!loading && isLoggedIn && displayName && (
+          {/* Greeting when logged in (non-admin only) */}
+          {!loading && isLoggedIn && !isAdmin && displayName && (
             <span className="hidden items-center text-xs font-medium text-muted-foreground sm:flex">
               Hi,&nbsp;<span className="font-semibold text-foreground">{displayName.split(" ")[0]}</span>
             </span>
@@ -77,21 +77,21 @@ export function SiteHeader() {
             </Link>
           )}
 
-          {/* Admin Dashboard button — always visible */}
-          <Link
-            to="/admin"
-            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary transition-all duration-300 hover:border-primary/50 hover:bg-primary hover:text-primary-foreground hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75 group-hover:bg-primary-foreground"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary group-hover:bg-primary-foreground"></span>
-            </span>
-            <span>{isLoggedIn && isAdmin ? "Dashboard" : "Admin"}</span>
-          </Link>
+          {/* Admin: Show Sign Out directly in place of name and Dashboard */}
+          {!loading && isLoggedIn && isAdmin && (
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="inline-flex items-center gap-1.5 rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign Out
+            </button>
+          )}
 
-          {/* Auth button: Sign Out when logged in, Sign In when logged out */}
+          {/* Regular user Sign Out or Sign In button */}
           {!loading && (
-            isLoggedIn ? (
+            isLoggedIn && !isAdmin ? (
               <button
                 type="button"
                 onClick={() => signOut()}
@@ -100,14 +100,14 @@ export function SiteHeader() {
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
               </button>
-            ) : (
+            ) : !isLoggedIn ? (
               <Link
                 to="/auth"
                 className="hidden rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40 sm:inline-flex"
               >
                 Sign In
               </Link>
-            )
+            ) : null
           )}
 
           <Link
@@ -166,7 +166,7 @@ export function SiteHeader() {
               {isLoggedIn && isAdmin ? "Dashboard" : "Admin Dashboard"}
             </Link>
             {!loading && (
-              isLoggedIn ? (
+              isLoggedIn && !isAdmin ? (
                 <button
                   type="button"
                   onClick={() => { signOut(); setOpen(false); }}
@@ -175,7 +175,7 @@ export function SiteHeader() {
                   <LogOut className="h-3.5 w-3.5" />
                   Sign Out
                 </button>
-              ) : (
+              ) : !isLoggedIn ? (
                 <Link
                   to="/auth"
                   onClick={() => setOpen(false)}
@@ -183,7 +183,7 @@ export function SiteHeader() {
                 >
                   Sign In
                 </Link>
-              )
+              ) : null
             )}
           </div>
         </nav>

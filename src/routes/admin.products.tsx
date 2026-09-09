@@ -12,6 +12,8 @@ import {
 } from "@/lib/products";
 import { formatPrice } from "@/lib/store";
 
+import { uploadProductImageServer } from "@/lib/upload.server";
+
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
 });
@@ -35,13 +37,28 @@ function slugify(value: string) {
 
 async function uploadImage(file: File): Promise<string> {
   if (file.size > 8 * 1024 * 1024) throw new Error("Image is larger than 8MB");
-  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || "jpg"}`;
-  const { error } = await supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .upload(path, file, file.type ? { contentType: file.type } : {});
-  if (error) throw error;
-  return path;
+  
+  // Convert file to base64
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64Data = result.split(",")[1];
+      resolve(base64Data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const res = await uploadProductImageServer({
+    data: {
+      base64,
+      fileName: file.name,
+      contentType: file.type || "image/jpeg",
+    },
+  });
+
+  return res.path;
 }
 
 function AdminProducts() {
@@ -71,6 +88,10 @@ function AdminProducts() {
       toast.success("Product added");
       setAdding(false);
       invalidate();
+      // Reload page to display all products in stock immediately as requested
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -97,6 +118,9 @@ function AdminProducts() {
     onSuccess: () => {
       toast.success("Product saved");
       invalidate();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -109,6 +133,9 @@ function AdminProducts() {
     onSuccess: () => {
       toast.success("Product deleted");
       invalidate();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -271,8 +298,28 @@ function ProductForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (draft.name.trim().length < 2) {
-          toast.error("Give the product a name");
+        if (!draft.name.trim()) {
+          toast.error("Please enter the product name.");
+          return;
+        }
+        if (!draft.brand.trim()) {
+          toast.error("Please enter the brand (e.g. Apple, Samsung).");
+          return;
+        }
+        if (!draft.price.trim()) {
+          toast.error("Please enter the price in Naira.");
+          return;
+        }
+        if (!draft.description.trim()) {
+          toast.error("Please enter a product description.");
+          return;
+        }
+        if (!draft.specifications.trim()) {
+          toast.error("Please fill in the product specifications.");
+          return;
+        }
+        if (!file && !previewUrl) {
+          toast.error("Please upload a product photo.");
           return;
         }
         // Send pure numeric value to the database
@@ -363,28 +410,32 @@ function ProductForm({
 
       {/* Product photo upload with live confirmation preview */}
       <div className="sm:col-span-2 rounded-md border border-dashed border-border p-4 bg-muted/30">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
-            Product Photo & Preview
-          </label>
-          {previewUrl && (
-            <button
-              type="button"
-              onClick={handleRemovePhoto}
-              className="text-xs text-destructive hover:underline font-semibold"
-            >
-              Remove photo (leave blank)
-            </button>
-          )}
-        </div>
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+          Product Photo & Preview
+        </label>
         <div className="mt-3 flex flex-wrap items-center gap-5">
+          {/* Preview box with overlay X button */}
           <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-md border border-border bg-background shadow-xs flex items-center justify-center">
             {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Product preview"
-                className="h-full w-full object-contain p-2"
-              />
+              <>
+                <img
+                  src={previewUrl}
+                  alt="Product preview"
+                  className="h-full w-full object-contain p-2"
+                />
+                {/* X button overlaid on image */}
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  aria-label="Remove image"
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md transition hover:scale-110 hover:opacity-90"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </>
             ) : (
               <span className="text-center text-xs text-muted-foreground px-2">No photo</span>
             )}
@@ -400,7 +451,7 @@ function ProductForm({
               {file ? (
                 <span className="font-medium text-primary">Selected: {file.name}</span>
               ) : previewUrl ? (
-                "Photo uploaded. Click 'Remove photo' above if you want to leave it blank."
+                "Photo set. Click the ✕ on the preview to remove it."
               ) : (
                 "Upload a high-quality photo of the device (JPG, PNG or WebP)."
               )}

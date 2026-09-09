@@ -25,10 +25,8 @@ export const PRODUCT_IMAGE_BUCKET = "product-images";
 export async function resolveImageUrl(value: string | null): Promise<string | null> {
   if (!value) return null;
   if (/^(https?:|data:|blob:|\/)/.test(value)) return value;
-  const { data } = await supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .createSignedUrl(value, 60 * 60 * 6);
-  return data?.signedUrl ?? null;
+  const { data } = supabase.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(value);
+  return data?.publicUrl ?? null;
 }
 
 async function withImages(rows: Product[]): Promise<Product[]> {
