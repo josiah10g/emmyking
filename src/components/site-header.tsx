@@ -67,6 +67,16 @@ export function SiteHeader() {
             </span>
           )}
 
+          {/* My Account link for non-admin logged-in users */}
+          {!loading && isLoggedIn && !isAdmin && (
+            <Link
+              to="/account"
+              className="hidden rounded-sm border border-border/60 px-3 py-1.5 text-xs sm:text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-accent hover:text-foreground sm:inline-flex"
+            >
+              My Account
+            </Link>
+          )}
+
           {/* Admin Dashboard button — always visible */}
           <Link
             to="/admin"
@@ -136,6 +146,17 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
+          {/* My Account on mobile for non-admin */}
+          {!loading && isLoggedIn && !isAdmin && (
+            <Link
+              to="/account"
+              onClick={() => setOpen(false)}
+              className="py-2.5 text-sm font-medium text-muted-foreground"
+              activeProps={{ className: "py-2.5 text-sm font-medium text-foreground" }}
+            >
+              My Account
+            </Link>
+          )}
           <div className="flex gap-2 py-3">
             <Link
               to="/admin"

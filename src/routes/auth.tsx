@@ -26,6 +26,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -58,6 +59,10 @@ function AuthPage() {
       setError("Please enter your first name.");
       return;
     }
+    if (mode === "signup" && !phone.trim()) {
+      setError("Please enter your phone number.");
+      return;
+    }
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
@@ -77,7 +82,7 @@ function AuthPage() {
         navigate({ to: "/admin" });
       } else {
         const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-        const res = await signUpWithPassword(email, password, fullName);
+        const res = await signUpWithPassword(email, password, fullName, phone.trim());
         toast.success("Account created successfully!");
         
         if (res?.session) {
@@ -164,34 +169,52 @@ function AuthPage() {
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         {mode === "signup" && (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                First Name
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  id="firstName"
-                  type="text"
-                  required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="e.g. John"
-                  className="w-full rounded-sm border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring"
-                />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  First Name
+                </label>
+                <div className="relative mt-1.5">
+                  <input
+                    id="firstName"
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="e.g. John"
+                    className="w-full rounded-sm border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Surname
+                </label>
+                <div className="relative mt-1.5">
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="e.g. Doe"
+                    className="w-full rounded-sm border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+                  />
+                </div>
               </div>
             </div>
             <div>
-              <label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Surname
+              <label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Phone Number
               </label>
               <div className="relative mt-1.5">
                 <input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="e.g. Doe"
+                  id="phone"
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. 08012345678"
                   className="w-full rounded-sm border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -265,23 +288,6 @@ function AuthPage() {
       >
         Continue with Google
       </button>
-
-      {/* Prominent Action Toggle Card below */}
-      <div className="mt-8 rounded-lg border border-border/80 bg-accent/30 p-4 text-center">
-        <p className="text-xs text-muted-foreground font-medium">
-          {mode === "login" ? "New to EMMYKING STORES?" : "Already have your credentials?"}
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === "login" ? "signup" : "login");
-            setError(null);
-          }}
-          className="mt-2 inline-flex items-center justify-center rounded-sm border border-input bg-background px-5 py-2 text-xs font-semibold shadow-xs transition hover:bg-accent"
-        >
-          {mode === "login" ? "Create An Account" : "Switch to Sign In"}
-        </button>
-      </div>
     </div>
   );
 }

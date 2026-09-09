@@ -126,13 +126,14 @@ export async function signInWithPassword(email: string, password: string) {
   return data;
 }
 
-export async function signUpWithPassword(email: string, password: string, fullName?: string) {
+export async function signUpWithPassword(email: string, password: string, fullName?: string, phone?: string) {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
     options: {
       data: {
         full_name: fullName?.trim() || "",
+        phone: phone?.trim() || "",
       },
     },
   });
