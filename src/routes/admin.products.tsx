@@ -12,12 +12,6 @@ import {
 } from "@/lib/products";
 import { formatPrice } from "@/lib/store";
 
-import { uploadProductImageServer } from "@/lib/upload.server";
-import {
-  adminCreateProductServer,
-  adminUpdateProductServer,
-  adminDeleteProductServer,
-} from "@/lib/admin.server";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
@@ -42,31 +36,18 @@ function slugify(value: string) {
 
 async function uploadImage(file: File): Promise<string> {
   if (file.size > 8 * 1024 * 1024) throw new Error("Image is larger than 8MB");
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-  const base64 = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64Data = result.split(",")[1];
-      resolve(base64Data);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  const { error } = await supabase.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
 
-  const res = await uploadProductImageServer({
-    data: {
-      base64,
-      fileName: file.name,
-      contentType: file.type || "image/jpeg",
-    },
-  });
-
-  if (!res?.path) {
-    throw new Error("Failed to upload product image to server storage.");
-  }
-
-  return res.path;
+  if (error) throw error;
+  return path;
 }
 
 function AdminProducts() {
@@ -79,19 +60,18 @@ function AdminProducts() {
   const create = useMutation({
     mutationFn: async (v: { draft: Draft; file: File | null }) => {
       const image_url = v.file ? await uploadImage(v.file) : null;
-      await adminCreateProductServer({
-        data: {
-          name: v.draft.name,
-          slug: slugify(v.draft.name),
-          brand: v.draft.brand || null,
-          category: v.draft.category || "phones",
-          description: v.draft.description || null,
-          specifications: v.draft.specifications || null,
-          price: v.draft.price.trim() === "" ? null : Number(v.draft.price),
-          in_stock: v.draft.in_stock,
-          image_url,
-        },
+      const { error } = await supabase.from("products").insert({
+        name: v.draft.name,
+        slug: slugify(v.draft.name),
+        brand: v.draft.brand || null,
+        category: v.draft.category || "phones",
+        description: v.draft.description || null,
+        specifications: v.draft.specifications || null,
+        price: v.draft.price.trim() === "" ? null : Number(v.draft.price),
+        in_stock: v.draft.in_stock,
+        image_url,
       });
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Product added");
@@ -117,12 +97,8 @@ function AdminProducts() {
       } else if (v.file) {
         patch.image_url = await uploadImage(v.file);
       }
-      await adminUpdateProductServer({
-        data: {
-          id: v.id,
-          patch,
-        },
-      });
+      const { error } = await supabase.from("products").update(patch).eq("id", v.id);
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Product saved");
@@ -133,9 +109,8 @@ function AdminProducts() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      await adminDeleteProductServer({
-        data: { id },
-      });
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Product deleted");
