@@ -18,8 +18,7 @@ import { useAuth } from "@/lib/auth";
 import { placeOrder } from "@/lib/orders";
 import { fetchStoreSettings, storeSettingsQuery, whatsappHref } from "@/lib/settings";
 import { formatPrice, STORE } from "@/lib/store";
-import { uploadReceiptServer } from "@/lib/upload.server";
-import { sendOrderEmailServer } from "@/lib/email.server";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -124,55 +123,37 @@ function CheckoutPage() {
       // 1. Generate unique reference code
       const ref = `EK-${Math.random().toString(36).slice(2, 6).toUpperCase()}${Date.now().toString().slice(-4)}`;
 
-      // 2. Convert receipt file to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(receiptFile);
+      // 2. Upload receipt via serverless API (bypasses storage RLS)
+      const formData = new FormData();
+      formData.append("file", receiptFile);
+      formData.append("reference", ref);
+
+      const uploadRes = await fetch("/api/receipt-upload", {
+        method: "POST",
+        body: formData,
       });
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok || uploadJson.error) {
+        throw new Error(uploadJson.error ?? "Receipt upload failed");
+      }
 
-      // 3. Upload receipt to storage bucket
-      const uploaded = await uploadReceiptServer({
-        data: {
-          base64,
-          fileName: receiptFile.name,
-          contentType: receiptFile.type || "image/jpeg",
-          reference: ref,
-        },
+      // 3. Save order to Supabase orders table directly
+      const orderItems = items.map((i) => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }));
+      const { error: orderError } = await supabase.from("orders").insert({
+        reference: ref,
+        customer_name: parsed.data.customer_name,
+        phone: parsed.data.phone,
+        email: parsed.data.email || session?.user?.email || null,
+        address: parsed.data.address,
+        notes: parsed.data.notes || null,
+        items: orderItems,
+        total: knownTotal ?? null,
+        receipt_path: uploadJson.path,
+        status: "pending",
+        payment_status: "pending",
+        user_id: session?.user?.id ?? null,
       });
-
-      // 4. Save order to Supabase orders table
-      await placeOrder(
-        {
-          customer_name: parsed.data.customer_name,
-          phone: parsed.data.phone,
-          email: parsed.data.email || session?.user?.email || "",
-          address: parsed.data.address,
-          notes: parsed.data.notes,
-          receipt_path: uploaded.path,
-        },
-        items,
-        knownTotal,
-      );
-
-      // 5. Trigger automated notification email (to Admin & Customer)
-      sendOrderEmailServer({
-        data: {
-          type: "new_order",
-          orderReference: ref,
-          customerName: parsed.data.customer_name,
-          customerPhone: parsed.data.phone,
-          customerEmail: parsed.data.email || session?.user?.email || null,
-          deliveryAddress: parsed.data.address,
-          items: items.map((i) => ({ name: i.name, qty: i.qty, price: i.price })),
-          total: knownTotal,
-          status: "pending",
-        },
-      }).catch((err) => console.error("Email send trigger:", err));
+      if (orderError) throw orderError;
 
       clear();
       setCompletedOrder({ reference: ref, phone: parsed.data.phone });
