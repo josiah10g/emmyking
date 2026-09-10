@@ -159,56 +159,94 @@ export function SiteHeader() {
 
       {/* Mobile slide-out menu */}
       <div className={cn("border-t border-border md:hidden", open ? "block" : "hidden")}>
-        <nav className="mx-auto flex max-w-7xl flex-col px-4 py-2 sm:px-6">
-          {/* Name greeting on mobile */}
-          {!loading && isLoggedIn && displayName && (
-            <p className="py-2 text-sm font-semibold text-foreground">
-              Hi, {displayName} 👋
-            </p>
+        <nav className="mx-auto flex max-w-7xl flex-col px-4 py-3 sm:px-6">
+          {/* User profile card on mobile for logged-in users */}
+          {!loading && isLoggedIn && (
+            <div className="flex items-center gap-3 border-b border-border/80 pb-3 mb-2">
+              <Link
+                to={isAdmin ? "/admin/profile" : "/account"}
+                onClick={() => setOpen(false)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted transition hover:ring-2 hover:ring-primary/40"
+              >
+                {session?.user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={session.user.user_metadata.avatar_url}
+                    alt={displayName || "Account"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-semibold text-foreground">
+                    {(displayName || (isAdmin ? "Admin" : "User")).charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {displayName || (isAdmin ? "Store Admin" : "Customer")}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{session.user.email}</p>
+              </div>
+            </div>
           )}
+
           {links.map((l) => (
             <Link
               key={l.to}
               to={l.to}
               onClick={() => setOpen(false)}
-              className="py-2.5 text-sm font-medium text-muted-foreground"
-              activeProps={{ className: "py-2.5 text-sm font-medium text-foreground" }}
+              className="py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+              activeProps={{ className: "py-2.5 text-sm font-semibold text-foreground" }}
               activeOptions={{ exact: l.to === "/" }}
             >
               {l.label}
             </Link>
           ))}
-          {/* My Account on mobile for non-admin */}
+
+          {/* Customer Portal Link */}
           {!loading && isLoggedIn && !isAdmin && (
             <Link
               to="/account"
               onClick={() => setOpen(false)}
-              className="py-2.5 text-sm font-medium text-muted-foreground"
-              activeProps={{ className: "py-2.5 text-sm font-medium text-foreground" }}
+              className="py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+              activeProps={{ className: "py-2.5 text-sm font-semibold text-foreground" }}
             >
-              My Account
+              My Orders & Account
             </Link>
           )}
-          <div className="flex gap-2 py-3">
+
+          {/* Admin Profile Link on mobile */}
+          {!loading && isLoggedIn && isAdmin && (
+            <Link
+              to="/admin/profile"
+              onClick={() => setOpen(false)}
+              className="py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+              activeProps={{ className: "py-2.5 text-sm font-semibold text-foreground" }}
+            >
+              Admin Profile
+            </Link>
+          )}
+
+          <div className="flex flex-col gap-2 pt-3 border-t border-border/80 mt-2">
             <Link
               to="/admin"
               onClick={() => setOpen(false)}
-              className="flex-1 rounded-sm border border-primary/40 bg-primary/10 px-3 py-2 text-center text-sm font-semibold text-primary"
+              className="rounded-sm border border-primary/40 bg-primary/10 px-3 py-2 text-center text-sm font-semibold text-primary"
             >
-              {isLoggedIn && isAdmin ? "Dashboard" : "Admin Dashboard"}
+              {isLoggedIn && isAdmin ? "Admin Dashboard" : "Admin Portal"}
             </Link>
+
             {!loading && (
-              isLoggedIn && !isAdmin ? (
+              isLoggedIn ? (
                 <button
                   type="button"
                   onClick={() => { signOut(); setOpen(false); }}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-sm bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/80 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   Sign Out
                 </button>
-              ) : !isLoggedIn ? (
-                <>
+              ) : (
+                <div className="flex gap-2">
                   <Link
                     to="/auth"
                     search={{ mode: "login" }}
@@ -225,8 +263,8 @@ export function SiteHeader() {
                   >
                     Sign Up
                   </Link>
-                </>
-              ) : null
+                </div>
+              )
             )}
           </div>
         </nav>

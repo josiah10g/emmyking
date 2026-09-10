@@ -331,11 +331,11 @@ function CustomerDashboardPage() {
       </div>
 
       {/* Navigation Tabs: Orders | Payments | Profile */}
-      <div className="mt-6 flex border-b border-border">
+      <div className="mt-6 flex border-b border-border overflow-x-auto scrollbar-none">
         <button
           type="button"
           onClick={() => setActiveTab("orders")}
-          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition ${
+          className={`flex shrink-0 items-center gap-2 border-b-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold transition ${
             activeTab === "orders"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -347,7 +347,7 @@ function CustomerDashboardPage() {
         <button
           type="button"
           onClick={() => setActiveTab("payments")}
-          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition ${
+          className={`flex shrink-0 items-center gap-2 border-b-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold transition ${
             activeTab === "payments"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -359,7 +359,7 @@ function CustomerDashboardPage() {
         <button
           type="button"
           onClick={() => setActiveTab("profile")}
-          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition ${
+          className={`flex shrink-0 items-center gap-2 border-b-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold transition ${
             activeTab === "profile"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
