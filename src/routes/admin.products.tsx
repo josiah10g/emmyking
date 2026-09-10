@@ -36,18 +36,21 @@ function slugify(value: string) {
 
 async function uploadImage(file: File): Promise<string> {
   if (file.size > 8 * 1024 * 1024) throw new Error("Image is larger than 8MB");
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-  const { error } = await supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .upload(path, file, {
-      cacheControl: "3600",
-      upsert: true,
-    });
+  const formData = new FormData();
+  formData.append("file", file);
 
-  if (error) throw error;
-  return path;
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const json = await res.json();
+  if (!res.ok || json.error) {
+    throw new Error(json.error ?? "Image upload failed");
+  }
+
+  return json.path as string;
 }
 
 function AdminProducts() {
