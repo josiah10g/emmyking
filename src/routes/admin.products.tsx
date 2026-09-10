@@ -54,32 +54,19 @@ async function uploadImage(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 
-  try {
-    const res = await uploadProductImageServer({
-      data: {
-        base64,
-        fileName: file.name,
-        contentType: file.type || "image/jpeg",
-      },
-    });
-    if (res?.path) return res.path;
-  } catch (err) {
-    console.error("Server upload error:", err);
+  const res = await uploadProductImageServer({
+    data: {
+      base64,
+      fileName: file.name,
+      contentType: file.type || "image/jpeg",
+    },
+  });
+
+  if (!res?.path) {
+    throw new Error("Failed to upload product image to server storage.");
   }
 
-  // Fallback: Direct upload to Supabase storage bucket
-  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const filePath = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || "jpg"}`;
-
-  const { error } = await supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .upload(filePath, file, { upsert: true });
-
-  if (error) {
-    throw new Error(`Failed to upload product image: ${error.message}`);
-  }
-
-  return filePath;
+  return res.path;
 }
 
 function AdminProducts() {
