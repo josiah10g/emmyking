@@ -127,12 +127,9 @@ function AdminLayout() {
             <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
               Admin Portal
             </span>
-            <span className="text-xs text-muted-foreground">
-              {session.user.email}
-            </span>
           </div>
           <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            Welcome, {session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "Admin"}
+            Welcome, {session.user.user_metadata?.full_name || session.user.user_metadata?.name || "Admin"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage your store inventory, review customer bank receipts, and configure store settings.

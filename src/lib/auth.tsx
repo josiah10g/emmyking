@@ -163,16 +163,24 @@ export async function signUpWithPassword(email: string, password: string, fullNa
   return data;
 }
 
-export async function signInWithGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: window.location.origin },
-  });
-  if (error) throw error;
-}
 
 export async function signOut() {
   await supabase.auth.signOut().catch(() => {});
+}
+
+export async function resetPasswordForEmail(email: string, redirectTo?: string) {
+  const redirectUrl = redirectTo || (typeof window !== "undefined" ? `${window.location.origin}/auth?mode=reset` : undefined);
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: redirectUrl,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function updatePassword(password: string) {
+  const { data, error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+  return data;
 }
 
 export async function grantAdminByEmail(email: string): Promise<boolean> {

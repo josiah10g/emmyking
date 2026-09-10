@@ -51,3 +51,60 @@ export const uploadProductImageServer = createServerFn({ method: "POST" })
 
     return { path: filePath };
   });
+
+export const uploadReceiptServer = createServerFn({ method: "POST" })
+  .validator((data: { base64: string; fileName: string; contentType: string; reference: string }) => data)
+  .handler(async ({ data }) => {
+    const serviceKey = getServiceRoleKey();
+    const supabaseUrl = process.env.SUPABASE_URL || "https://ntbggqkhoddfkxmwmoch.supabase.co";
+
+    if (!serviceKey) {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+    }
+
+    const sbAdmin = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false },
+    });
+
+    const buffer = Buffer.from(data.base64, "base64");
+    const ext = (data.fileName.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const filePath = `${data.reference.toUpperCase()}/${Date.now()}.${ext || "jpg"}`;
+
+    const { error } = await sbAdmin.storage
+      .from("payment-receipts")
+      .upload(filePath, buffer, {
+        contentType: data.contentType || "image/jpeg",
+        upsert: true,
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { path: filePath };
+  });
+
+export const getSignedReceiptUrlServer = createServerFn({ method: "POST" })
+  .validator((data: { path: string }) => data)
+  .handler(async ({ data }) => {
+    const serviceKey = getServiceRoleKey();
+    const supabaseUrl = process.env.SUPABASE_URL || "https://ntbggqkhoddfkxmwmoch.supabase.co";
+
+    if (!serviceKey) {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+    }
+
+    const sbAdmin = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false },
+    });
+
+    const { data: signed, error } = await sbAdmin.storage
+      .from("payment-receipts")
+      .createSignedUrl(data.path, 60 * 60); // 1 hour valid
+
+    if (error || !signed?.signedUrl) {
+      throw new Error(error?.message || "Could not generate signed receipt URL");
+    }
+
+    return { url: signed.signedUrl };
+  });

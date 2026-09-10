@@ -60,54 +60,86 @@ export function SiteHeader() {
             {STORE.phone}
           </a>
 
-          {/* Greeting when logged in (non-admin only) */}
-          {!loading && isLoggedIn && !isAdmin && displayName && (
-            <span className="hidden items-center text-xs font-medium text-muted-foreground sm:flex">
-              Hi,&nbsp;<span className="font-semibold text-foreground">{displayName.split(" ")[0]}</span>
-            </span>
-          )}
-
-          {/* My Account link for non-admin logged-in users */}
+          {/* User circular avatar linking to /account for non-admin logged-in users */}
           {!loading && isLoggedIn && !isAdmin && (
-            <Link
-              to="/account"
-              className="hidden rounded-sm border border-border/60 px-3 py-1.5 text-xs sm:text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-accent hover:text-foreground sm:inline-flex"
-            >
-              My Account
-            </Link>
-          )}
-
-          {/* Admin: Show Sign Out directly in place of name and Dashboard */}
-          {!loading && isLoggedIn && isAdmin && (
-            <button
-              type="button"
-              onClick={() => signOut()}
-              className="inline-flex items-center gap-1.5 rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Sign Out
-            </button>
-          )}
-
-          {/* Regular user Sign Out or Sign In button */}
-          {!loading && (
-            isLoggedIn && !isAdmin ? (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/account"
+                className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-muted transition hover:ring-2 hover:ring-primary/40"
+                title="My Account"
+              >
+                {session?.user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={session.user.user_metadata.avatar_url}
+                    alt={displayName || "Account"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-semibold text-foreground">
+                    {(displayName || "U").charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </Link>
               <button
                 type="button"
                 onClick={() => signOut()}
-                className="hidden items-center gap-1.5 rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40 sm:inline-flex"
+                className="inline-flex items-center gap-1.5 rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
               </button>
-            ) : !isLoggedIn ? (
+            </div>
+          )}
+
+          {/* Admin: Show circular profile avatar linking to /admin/profile + Sign Out */}
+          {!loading && isLoggedIn && isAdmin && (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/admin/profile"
+                className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-muted transition hover:ring-2 hover:ring-primary/40"
+                title="Admin Profile"
+              >
+                {session?.user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={session.user.user_metadata.avatar_url}
+                    alt="Admin"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-semibold text-foreground">
+                    {(session?.user?.user_metadata?.full_name || "A").charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="inline-flex items-center gap-1.5 rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign Out
+              </button>
+            </div>
+          )}
+
+          {/* Logged out visitor: Login & Sign Up buttons */}
+          {!loading && !isLoggedIn && (
+            <div className="hidden items-center gap-2 sm:flex">
               <Link
                 to="/auth"
-                className="hidden rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40 sm:inline-flex"
+                search={{ mode: "login" }}
+                className="rounded-sm border border-border/80 px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-accent hover:border-foreground/40"
               >
-                Sign In
+                Log In
               </Link>
-            ) : null
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="rounded-sm bg-foreground text-background px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:opacity-90"
+              >
+                Sign Up
+              </Link>
+            </div>
           )}
 
           <Link
@@ -176,13 +208,24 @@ export function SiteHeader() {
                   Sign Out
                 </button>
               ) : !isLoggedIn ? (
-                <Link
-                  to="/auth"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 rounded-sm bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground"
-                >
-                  Sign In
-                </Link>
+                <>
+                  <Link
+                    to="/auth"
+                    search={{ mode: "login" }}
+                    onClick={() => setOpen(false)}
+                    className="flex-1 rounded-sm border border-border/80 px-3 py-2 text-center text-sm font-semibold transition hover:bg-accent"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/auth"
+                    search={{ mode: "signup" }}
+                    onClick={() => setOpen(false)}
+                    className="flex-1 rounded-sm bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground"
+                  >
+                    Sign Up
+                  </Link>
+                </>
               ) : null
             )}
           </div>

@@ -88,10 +88,6 @@ function AdminProducts() {
       toast.success("Product added");
       setAdding(false);
       invalidate();
-      // Reload page to display all products in stock immediately as requested
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -118,9 +114,6 @@ function AdminProducts() {
     onSuccess: () => {
       toast.success("Product saved");
       invalidate();
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -133,9 +126,6 @@ function AdminProducts() {
     onSuccess: () => {
       toast.success("Product deleted");
       invalidate();
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     },
     onError: (e: Error) => toast.error(e.message),
   });

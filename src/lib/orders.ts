@@ -26,10 +26,13 @@ export type Order = {
 };
 
 export const PAYMENT_LABELS: Record<string, string> = {
-  awaiting_receipt: "Awaiting receipt",
-  under_review: "Under review",
-  approved: "Payment approved",
-  declined: "Payment declined",
+  pending: "Pending",
+  under_review: "Pending",
+  awaiting_receipt: "Pending",
+  approved: "Successful",
+  successful: "Successful",
+  paid: "Successful",
+  declined: "Declined",
 };
 
 export type PlaceOrderInput = {
@@ -38,6 +41,7 @@ export type PlaceOrderInput = {
   email: string;
   address: string;
   notes: string;
+  receipt_path: string;
 };
 
 export async function placeOrder(
@@ -65,6 +69,10 @@ export async function placeOrder(
       notes: input.notes || null,
       items,
       total,
+      receipt_path: input.receipt_path,
+      receipt_uploaded_at: new Date().toISOString(),
+      status: "pending",
+      payment_status: "pending",
       user_id: session.session?.user.id ?? null,
     })
     .select("id, reference")
@@ -169,7 +177,22 @@ export async function deleteOrder(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function reuploadReceipt(orderId: string, receiptPath: string): Promise<void> {
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      receipt_path: receiptPath,
+      receipt_uploaded_at: new Date().toISOString(),
+      payment_status: "pending",
+      status: "pending",
+      admin_note: null,
+    })
+    .eq("id", orderId);
+  if (error) throw error;
+}
+
 export async function receiptUrl(path: string): Promise<string | null> {
   const { data } = await supabase.storage.from(RECEIPT_BUCKET).createSignedUrl(path, 60 * 30);
   return data?.signedUrl ?? null;
 }
+
