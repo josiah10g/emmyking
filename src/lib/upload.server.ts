@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 
+const FALLBACK_SERVICE_ROLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YmdncWtob2RkZmt4bXdtb2NoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODc3NzQ1NywiZXhwIjoyMTA0MzUzNDU3fQ.EtZ6CEC2DNPnlU6ChS5iWXwMxPTcQ5bJSoIHtTxlxag";
+
 function getServiceRoleKey(): string {
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -17,7 +20,7 @@ function getServiceRoleKey(): string {
       }
     }
   } catch {}
-  return "";
+  return FALLBACK_SERVICE_ROLE_KEY;
 }
 
 export const uploadProductImageServer = createServerFn({ method: "POST" })

@@ -13,6 +13,11 @@ import {
 import { formatPrice } from "@/lib/store";
 
 import { uploadProductImageServer } from "@/lib/upload.server";
+import {
+  adminCreateProductServer,
+  adminUpdateProductServer,
+  adminDeleteProductServer,
+} from "@/lib/admin.server";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
@@ -37,20 +42,19 @@ function slugify(value: string) {
 
 async function uploadImage(file: File): Promise<string> {
   if (file.size > 8 * 1024 * 1024) throw new Error("Image is larger than 8MB");
-  
-  // Try server function first
-  try {
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        const base64Data = result.split(",")[1];
-        resolve(base64Data);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
 
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64Data = result.split(",")[1];
+      resolve(base64Data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  try {
     const res = await uploadProductImageServer({
       data: {
         base64,
@@ -58,10 +62,9 @@ async function uploadImage(file: File): Promise<string> {
         contentType: file.type || "image/jpeg",
       },
     });
-
     if (res?.path) return res.path;
-  } catch (serverErr) {
-    console.warn("Server image upload failed, attempting direct Supabase storage upload:", serverErr);
+  } catch (err) {
+    console.error("Server upload error:", err);
   }
 
   // Fallback: Direct upload to Supabase storage bucket
@@ -89,18 +92,19 @@ function AdminProducts() {
   const create = useMutation({
     mutationFn: async (v: { draft: Draft; file: File | null }) => {
       const image_url = v.file ? await uploadImage(v.file) : null;
-      const { error } = await supabase.from("products").insert({
-        name: v.draft.name,
-        slug: slugify(v.draft.name),
-        brand: v.draft.brand || null,
-        category: v.draft.category || "phones",
-        description: v.draft.description || null,
-        specifications: v.draft.specifications || null,
-        price: v.draft.price.trim() === "" ? null : Number(v.draft.price),
-        in_stock: v.draft.in_stock,
-        image_url,
+      await adminCreateProductServer({
+        data: {
+          name: v.draft.name,
+          slug: slugify(v.draft.name),
+          brand: v.draft.brand || null,
+          category: v.draft.category || "phones",
+          description: v.draft.description || null,
+          specifications: v.draft.specifications || null,
+          price: v.draft.price.trim() === "" ? null : Number(v.draft.price),
+          in_stock: v.draft.in_stock,
+          image_url,
+        },
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Product added");
@@ -126,8 +130,12 @@ function AdminProducts() {
       } else if (v.file) {
         patch.image_url = await uploadImage(v.file);
       }
-      const { error } = await supabase.from("products").update(patch).eq("id", v.id);
-      if (error) throw error;
+      await adminUpdateProductServer({
+        data: {
+          id: v.id,
+          patch,
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Product saved");
@@ -138,8 +146,9 @@ function AdminProducts() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", id);
-      if (error) throw error;
+      await adminDeleteProductServer({
+        data: { id },
+      });
     },
     onSuccess: () => {
       toast.success("Product deleted");

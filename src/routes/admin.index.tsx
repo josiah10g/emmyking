@@ -16,6 +16,7 @@ import { whatsappHref } from "@/lib/settings";
 import { formatPrice } from "@/lib/store";
 import { sendOrderEmailServer } from "@/lib/email.server";
 import { getSignedReceiptUrlServer } from "@/lib/upload.server";
+import { adminReviewPaymentServer, adminDeleteOrderServer } from "@/lib/admin.server";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminOrders,
@@ -32,7 +33,13 @@ function AdminOrders() {
 
   const review = useMutation({
     mutationFn: (v: { id: string; decision: "approved" | "declined"; note: string; order: Order }) =>
-      reviewPayment(v.id, v.decision, v.note),
+      adminReviewPaymentServer({
+        data: {
+          id: v.id,
+          decision: v.decision,
+          note: v.note,
+        },
+      }),
     onSuccess: (_d, v) => {
       const isApproved = v.decision === "approved";
       toast.success(isApproved ? "Payment marked as Successful" : "Request Declined");
@@ -58,7 +65,7 @@ function AdminOrders() {
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => deleteOrder(id),
+    mutationFn: (id: string) => adminDeleteOrderServer({ data: { id } }),
     onSuccess: () => {
       toast.success("Order deleted");
       invalidate();
