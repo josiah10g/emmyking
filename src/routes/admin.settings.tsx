@@ -5,7 +5,7 @@ import { Loader2, Save, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { grantAdminByEmail, useAuth } from "@/lib/auth";
 import { storeSettingsQuery } from "@/lib/settings";
-import { adminUpdateStoreSettingsServer } from "@/lib/admin.server";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/settings")({
   component: AdminSettings,
@@ -32,20 +32,19 @@ function AdminSettings() {
   const save = useMutation({
     mutationFn: async () => {
       if (!settings?.id) return;
-      await adminUpdateStoreSettingsServer({
-        data: {
-          id: settings.id,
-          patch: {
-            bank_name: form.bank_name ?? settings.bank_name,
-            account_name: form.account_name ?? settings.account_name,
-            account_number: form.account_number ?? settings.account_number,
-            payment_instructions: form.payment_instructions ?? settings.payment_instructions,
-            contact_phone: form.contact_phone ?? settings.contact_phone,
-            whatsapp_number: form.whatsapp_number ?? settings.whatsapp_number,
-            contact_email: form.contact_email ?? settings.contact_email,
-          },
-        },
-      });
+      const { error } = await supabase
+        .from("store_settings")
+        .update({
+          bank_name: form.bank_name ?? settings.bank_name,
+          account_name: form.account_name ?? settings.account_name,
+          account_number: form.account_number ?? settings.account_number,
+          payment_instructions: form.payment_instructions ?? settings.payment_instructions,
+          contact_phone: form.contact_phone ?? settings.contact_phone,
+          whatsapp_number: form.whatsapp_number ?? settings.whatsapp_number,
+          contact_email: form.contact_email ?? settings.contact_email,
+        })
+        .eq("id", settings.id);
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Settings updated successfully");

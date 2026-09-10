@@ -5,18 +5,28 @@ import { ExternalLink, Loader2, Package, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   adminOrdersQuery,
-  deleteOrder,
   PAYMENT_LABELS,
-  receiptUrl,
-  reviewPayment,
   type Order,
 } from "@/lib/orders";
 import { storeSettingsQuery } from "@/lib/settings";
 import { whatsappHref } from "@/lib/settings";
 import { formatPrice } from "@/lib/store";
-import { sendOrderEmailServer } from "@/lib/email.server";
-import { getSignedReceiptUrlServer } from "@/lib/upload.server";
-import { adminReviewPaymentServer, adminDeleteOrderServer } from "@/lib/admin.server";
+import { supabase } from "@/integrations/supabase/client";
+
+/** Get a signed URL for a receipt via the /api/signed-url serverless function */
+async function getReceiptUrl(path: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/signed-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bucket: "payment-receipts", path }),
+    });
+    const json = await res.json();
+    return json.url ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export const Route = createFileRoute("/admin/")({
   component: AdminOrders,
@@ -32,40 +42,31 @@ function AdminOrders() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin", "orders"] });
 
   const review = useMutation({
-    mutationFn: (v: { id: string; decision: "approved" | "declined"; note: string; order: Order }) =>
-      adminReviewPaymentServer({
-        data: {
-          id: v.id,
-          decision: v.decision,
-          note: v.note,
-        },
-      }),
+    mutationFn: async (v: { id: string; decision: "approved" | "declined"; note: string; order: Order }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          payment_status: v.decision,
+          status: v.decision === "approved" ? "paid" : "pending",
+          admin_note: v.note || null,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", v.id);
+      if (error) throw error;
+    },
     onSuccess: (_d, v) => {
       const isApproved = v.decision === "approved";
       toast.success(isApproved ? "Payment marked as Successful" : "Request Declined");
       invalidate();
-
-      // Trigger automated status email to customer
-      sendOrderEmailServer({
-        data: {
-          type: "status_change",
-          orderReference: v.order.reference,
-          customerName: v.order.customer_name,
-          customerPhone: v.order.phone,
-          customerEmail: v.order.email,
-          deliveryAddress: v.order.address || "Store pickup",
-          items: v.order.items.map((i) => ({ name: i.name, qty: i.qty, price: i.price })),
-          total: v.order.total,
-          status: isApproved ? "successful" : "declined",
-          adminNote: v.note || null,
-        },
-      }).catch((err) => console.error("Email trigger error:", err));
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => adminDeleteOrderServer({ data: { id } }),
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
     onSuccess: () => {
       toast.success("Order deleted");
       invalidate();
@@ -370,9 +371,9 @@ function OrderCard({
   async function openReceipt() {
     if (!order.receipt_path) return;
     try {
-      const res = await getSignedReceiptUrlServer({ data: { path: order.receipt_path } });
-      if (res?.url) {
-        window.open(res.url, "_blank", "noopener");
+      const url = await getReceiptUrl(order.receipt_path);
+      if (url) {
+        window.open(url, "_blank", "noopener");
       } else {
         toast.error("Receipt link could not be created");
       }
