@@ -38,27 +38,45 @@ function slugify(value: string) {
 async function uploadImage(file: File): Promise<string> {
   if (file.size > 8 * 1024 * 1024) throw new Error("Image is larger than 8MB");
   
-  // Convert file to base64
-  const base64 = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64Data = result.split(",")[1];
-      resolve(base64Data);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  // Try server function first
+  try {
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64Data = result.split(",")[1];
+        resolve(base64Data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
-  const res = await uploadProductImageServer({
-    data: {
-      base64,
-      fileName: file.name,
-      contentType: file.type || "image/jpeg",
-    },
-  });
+    const res = await uploadProductImageServer({
+      data: {
+        base64,
+        fileName: file.name,
+        contentType: file.type || "image/jpeg",
+      },
+    });
 
-  return res.path;
+    if (res?.path) return res.path;
+  } catch (serverErr) {
+    console.warn("Server image upload failed, attempting direct Supabase storage upload:", serverErr);
+  }
+
+  // Fallback: Direct upload to Supabase storage bucket
+  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const filePath = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || "jpg"}`;
+
+  const { error } = await supabase.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .upload(filePath, file, { upsert: true });
+
+  if (error) {
+    throw new Error(`Failed to upload product image: ${error.message}`);
+  }
+
+  return filePath;
 }
 
 function AdminProducts() {

@@ -214,27 +214,20 @@ export function SiteHeader() {
             </Link>
           )}
 
-          {/* Admin Profile Link on mobile */}
+          {/* Admin link on mobile - ONLY shown if logged in as Admin */}
           {!loading && isLoggedIn && isAdmin && (
-            <Link
-              to="/admin/profile"
-              onClick={() => setOpen(false)}
-              className="py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-              activeProps={{ className: "py-2.5 text-sm font-semibold text-foreground" }}
-            >
-              Admin Profile
-            </Link>
+            <div className="flex flex-col gap-2 pt-3 border-t border-border/80 mt-2">
+              <Link
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className="rounded-sm border border-primary/40 bg-primary/10 px-3 py-2 text-center text-sm font-semibold text-primary"
+              >
+                Admin Dashboard
+              </Link>
+            </div>
           )}
 
           <div className="flex flex-col gap-2 pt-3 border-t border-border/80 mt-2">
-            <Link
-              to="/admin"
-              onClick={() => setOpen(false)}
-              className="rounded-sm border border-primary/40 bg-primary/10 px-3 py-2 text-center text-sm font-semibold text-primary"
-            >
-              {isLoggedIn && isAdmin ? "Admin Dashboard" : "Admin Portal"}
-            </Link>
-
             {!loading && (
               isLoggedIn ? (
                 <button
